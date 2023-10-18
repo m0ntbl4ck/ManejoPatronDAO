@@ -1,0 +1,11 @@
+/nbproject/
+/build/
+/dist/
+*.jar
+!libs
+!libs/
+!libs/*
+!libs/**
+!libs/**/
+!libs/**/*.jar
+!libs/*.jar
