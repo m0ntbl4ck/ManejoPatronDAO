@@ -9,6 +9,8 @@ import com.model.Inventario;
 import com.model.Producto;
 import com.model.Venta;
 import com.model.VentaProducto;
+import com.servlet.EmpujarCarrito;
+import com.utilidades.EmpujarException;
 import java.io.Serializable;
 import java.sql.SQLException;
 import java.util.Date;
@@ -19,14 +21,15 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.enterprise.context.SessionScoped;
 import javax.inject.Inject;
-import utilidades.PurchaseException;
+import javax.transaction.Transactional;
 
 /**
  *
  * @author mont_
  */
 @SessionScoped
-public class CarritoDeCompras implements Serializable{
+public class CarritoDeCompras implements Serializable {
+    
     private static final Logger logger = Logger.getLogger("com.beans.CarritoDeCompras");
     
     @Inject
@@ -34,9 +37,12 @@ public class CarritoDeCompras implements Serializable{
     @Inject
     private InventorioDAO inventarioDAO;
     @Inject
-    private VentaProductoDAO ventaProductoDAO;
-    @Inject
     private VentaDAO ventaDAO;
+    @Inject
+    private VentaProductoDAO ventaproductoDAO;
+    
+   // @Resource
+   // private UserTransaction ut;
     
     private Map<Producto, Integer> carrito;
 
@@ -44,29 +50,27 @@ public class CarritoDeCompras implements Serializable{
         this.carrito = new HashMap<>();
     }
     
-    public void agregarItem(String idProducto, int cantidad){
-        try{
+    public void agregarArticulo(String idProducto, int cantidad){
+        try {
             Producto producto = productoDAO.obtenerProductoPorId(idProducto);
             
             if(carrito.containsKey(producto)){
-                int cantidadActual=carrito.get(producto);
+                int cantidadActual = carrito.get(producto);
                 cantidadActual += cantidad;
                 carrito.put(producto, cantidadActual);
             }else{
                 carrito.put(producto, cantidad);
             }
-        }catch(SQLException ex){
-            System.out.println("Bean Carrito: agregarITEM: "+ex);
+        } catch (SQLException e) {
+            System.out.println("CaritoBean: agregarCarrito: "+ e);
         }
     }
     
-    public void removerItem(Producto producto)
-    {
+    public void removerArticulo(Producto producto){
         carrito.remove(producto);
     }
     
-    
-    public int obtenerConteodeItems(){
+    public int getConteoArticulos(){
         int count =0;
         Set<Producto> productos = carrito.keySet();
         for(Producto p : productos){
@@ -74,55 +78,58 @@ public class CarritoDeCompras implements Serializable{
         }
         return count;
     }
-    
-    
-    public Map<Producto, Integer> obtenercarrito(){
+
+    public Map<Producto, Integer> getCarrito() {
         return carrito;
     }
     
     
-    public Venta purchaseCarrito() throws PurchaseException{
+  @Transactional(value = Transactional.TxType.REQUIRED,
+              rollbackOn = {EmpujarException.class})
+    public Venta empujarCarrito()throws EmpujarException{
         Venta ventas = null;
         try{
+            
+         //   ut.begin();
             ventas = ventaDAO.crearRegistroVentas();
             
-            Set<Producto> productos = carrito.keySet();
-            double costTotal = 0.0;
+            Set<Producto> productos= carrito.keySet();
+            double costoTotal = 0.0;
             
-            for(Producto producto : productos){
+            for(Producto producto: productos){
                 int cantidad = carrito.get(producto);
                 Inventario inventario = inventarioDAO.obtenerInventario(producto.getIdProducto());
-                
                 if(!inventario.restar(cantidad)){
-                    String error ="No se puede comprar: "+producto.getIdProducto()
-                            +" : cantidad deseada "+ cantidad + " : Cantidad disponible: "
+               //     ut.rollback();
+                    String error = "No se puede comprar: "+producto.getIdProducto()
+                            +" : cantidad deseada: "+ cantidad + " : Cantidad disponible: "
                             +inventario.getCantidadDisponible();
                     logger.log(Level.INFO,error);
-                    throw new PurchaseException(error);
-    
+                    throw new EmpujarException(error);
                 }else{
-                    costTotal += producto.getPrecio() *cantidad;
-                    VentaProducto ventaProducto = new VentaProducto(ventas.getIdVenta(),producto.getIdProducto(),cantidad);
-                    
-                    ventaProductoDAO.agregarRegistroVentaProducto(ventaProducto);
-                    inventarioDAO.actualizarInventario(producto.getIdProducto(), inventario.getCantidadDisponible());
+                    costoTotal += producto.getPrecio()* cantidad;
+                   VentaProducto ventasProducto = new VentaProducto(ventas.getIdVenta(),producto.getIdProducto(),cantidad);
+                   ventaproductoDAO.agregarRegistroVentaProducto(ventasProducto);
+                   inventarioDAO.actualizarInventario(producto.getIdProducto(), inventario.getCantidadDisponible());
+                   
                 }
             }
-            
             ventas.setFechaVenta(new Date());
-            ventas.setTotalVenta(costTotal);
+            ventas.setTotalVenta(costoTotal);
             ventaDAO.actualizarRegistroVentas(ventas);
-        }catch(SQLException ex){
-            logger.log(Level.INFO,"CarritoDeCompras: purchaseCarrito "+ ex);
-                    
-            throw new PurchaseException("SQLException en PurchaseCarrito "+ex);
+         //   ut.commit();
+        }catch(/*RollbackException | HeuristicMixedException |HeuristicRollbackException |
+                NotSupportedException| SystemException|*/SQLException ex){
+            logger.log(Level.INFO,"CarritoDeCompras : empujarCarrito "+ex);
+            throw new EmpujarException ("SQLException al comprarCarrito: "+ex.getMessage());
         }finally{
             carrito = new HashMap<>();
         }
         return ventas;
     }
     
-    public void reiniciarCarrito(){
-        carrito = new HashMap<>();  
+    public void resetCarrito()
+    {
+        carrito = new HashMap<>();
     }
 }

@@ -15,6 +15,7 @@ import javax.sql.DataSource;
 
 @Model
 public class VentaDAO implements Serializable{
+    
      @Resource(lookup = "mysql/javasupermercadodb")
     private DataSource dataSource;
      

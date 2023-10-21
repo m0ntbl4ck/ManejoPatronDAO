@@ -27,7 +27,7 @@ public class VentaProductoDAO implements Serializable{
             PreparedStatement pStmt = conn.prepareCall("INSERT INTO ventaproducto VALUES (?,?,?)");
             pStmt.setInt(1, registroVentas.getIdVenta());
              pStmt.setString(2, registroVentas.getIdProducto());
-              pStmt.setInt(3, registroVentas.getCantidadVendida());
+              pStmt.setInt(3, registroVentas.getcantidadVendida());
               pStmt.executeUpdate();
               pStmt.close();        
     }

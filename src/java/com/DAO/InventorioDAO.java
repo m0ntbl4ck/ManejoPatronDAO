@@ -28,9 +28,7 @@ public class InventorioDAO implements Serializable {
             stmt.close();
             rs.close();
         }
-        finally{
-            
-        }
+      
         return inventario;
     }
     

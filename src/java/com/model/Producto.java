@@ -7,6 +7,7 @@ import java.util.Objects;
  *
  * @author mont_
  */
+
 public class Producto {
     private String idProducto;
     private String nombreProducto;
@@ -63,11 +64,11 @@ public class Producto {
 
     @Override
     public int hashCode() {
-        int hash = 7;
-        hash = 97 * hash + Objects.hashCode(this.idProducto);
-        hash = 97 * hash + Objects.hashCode(this.nombreProducto);
-        hash = 97 * hash + (int) (Double.doubleToLongBits(this.precio) ^ (Double.doubleToLongBits(this.precio) >>> 32));
-        hash = 97 * hash + Objects.hashCode(this.descripcionProducto);
+        int hash = 5;
+        hash = 59 * hash + Objects.hashCode(this.idProducto);
+        hash = 59 * hash + Objects.hashCode(this.nombreProducto);
+        hash = 59 * hash + (int) (Double.doubleToLongBits(this.precio) ^ (Double.doubleToLongBits(this.precio) >>> 32));
+        hash = 59 * hash + Objects.hashCode(this.descripcionProducto);
         return hash;
     }
 
@@ -94,6 +95,8 @@ public class Producto {
         }
         return Objects.equals(this.descripcionProducto, other.descripcionProducto);
     }
+
+    
     
     
     

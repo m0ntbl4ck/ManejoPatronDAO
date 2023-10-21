@@ -25,6 +25,8 @@ public class Inventario {
            return false;
        }
    }
+   
+   
     public int getCantidadDisponible() {
         return cantidadDisponible;
     }
